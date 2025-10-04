@@ -5,37 +5,69 @@ import axios from 'axios';
 import './App.css';
 
 function App() {
-  // State for input fields
   const [temperature, setTemperature] = useState(150);
   const [pressure, setPressure] = useState(50);
   const [speed, setSpeed] = useState(1000);
-
-  // State for the prediction result and loading status
   const [prediction, setPrediction] = useState(null);
+
+  const [targetQuality, setTargetQuality] = useState(98);
+  const [optimalParams, setOptimalParams] = useState(null);
+  
+  const [locks, setLocks] = useState({
+    temperature: false,
+    pressure: false,
+    speed: false,
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSimulation = async (e) => {
-    e.preventDefault(); // Prevent form from reloading the page
+    e.preventDefault();
     setIsLoading(true);
     setError('');
     setPrediction(null);
+    setOptimalParams(null);
 
     try {
-      // API endpoint of our Flask back-end
-      const apiUrl = 'http://127.0.0.1:5000/predict';
-      
-      const response = await axios.post(apiUrl, {
-        temperature,
-        pressure,
-        speed,
+      const response = await axios.post('http://127.0.0.1:5000/predict', {
+        temperature, pressure, speed,
       });
-
       setPrediction(response.data.predicted_quality);
-
     } catch (err) {
-      setError('Failed to get a prediction. Is the Python server running?');
-      console.error(err);
+      setError('Prediction failed. Is the server running?');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleLockToggle = (param) => {
+    setLocks(prevLocks => ({
+      ...prevLocks,
+      [param]: !prevLocks[param],
+    }));
+  };
+
+  const handleFindParameters = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setOptimalParams(null);
+    setPrediction(null);
+    
+    const locked_params = {};
+    if (locks.temperature) locked_params.temperature = temperature;
+    if (locks.pressure) locked_params.pressure = pressure;
+    if (locks.speed) locked_params.speed = speed;
+
+    try {
+      const response = await axios.post('http://127.0.0.1:5000/find-parameters', {
+        target_quality: targetQuality,
+        locked_params,
+      });
+      setOptimalParams(response.data);
+    } catch (err) {
+      setError('Parameter search failed. Is the server running?');
     } finally {
       setIsLoading(false);
     }
@@ -43,50 +75,29 @@ function App() {
 
   return (
     <div className="dashboard">
-      <header>
-        <h1>Manufacturing Process Simulator</h1>
-      </header>
+      <header><h1>Manufacturing Process Simulator & Optimizer</h1></header>
       <main>
-        <div className="input-panel">
-          <h2>Process Parameters</h2>
+        {/* --- Panel 1: Predict Quality --- */}
+        <div className="panel">
+          <h2>1. Predict Quality from Parameters</h2>
           <form onSubmit={handleSimulation}>
             <div className="form-group">
               <label>Temperature (°C)</label>
-              <input
-                type="number"
-                value={temperature}
-                onChange={(e) => setTemperature(e.target.value)}
-                step="0.1"
-              />
+              <input type="number" value={temperature} onChange={(e) => setTemperature(e.target.value)} step="0.1" />
             </div>
             <div className="form-group">
               <label>Pressure (psi)</label>
-              <input
-                type="number"
-                value={pressure}
-                onChange={(e) => setPressure(e.target.value)}
-                step="0.1"
-              />
+              <input type="number" value={pressure} onChange={(e) => setPressure(e.target.value)} step="0.1" />
             </div>
             <div className="form-group">
               <label>Speed (rpm)</label>
-              <input
-                type="number"
-                value={speed}
-                onChange={(e) => setSpeed(e.target.value)}
-              />
+              <input type="number" value={speed} onChange={(e) => setSpeed(e.target.value)} />
             </div>
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Simulating...' : 'Simulate Quality'}
-            </button>
+            <button type="submit" disabled={isLoading}>{isLoading ? '...' : 'Predict Quality'}</button>
           </form>
-        </div>
-
-        <div className="output-panel">
-          <h2>Predicted Result</h2>
           <div className="result-display">
-            {isLoading && <p>Loading...</p>}
-            {error && <p className="error">{error}</p>}
+            {isLoading && !optimalParams && <p>Loading...</p>}
+            {error && !optimalParams && <p className="error">{error}</p>}
             {prediction !== null && (
               <div className="prediction">
                 <p>Predicted Quality Score:</p>
@@ -94,6 +105,65 @@ function App() {
               </div>
             )}
           </div>
+        </div>
+        
+        {/* --- Panel 2: Find Parameters --- */}
+        <div className="panel">
+          <h2>2. Find Parameters for a Quality Score</h2>
+          <form onSubmit={handleFindParameters}>
+            <div className="form-group">
+              <label>Desired Quality Score</label>
+              <input type="number" value={targetQuality} onChange={(e) => setTargetQuality(e.target.value)} step="0.1" />
+            </div>
+            <div className="form-group-lockable">
+              <div className="input-wrapper">
+                <label>Temperature (°C)</label>
+                <input type="number" value={temperature} onChange={(e) => setTemperature(e.target.value)} step="0.1" disabled={locks.temperature} />
+              </div>
+              <button type="button" onClick={() => handleLockToggle('temperature')} className={`lock-btn ${locks.temperature ? 'locked' : ''}`}>
+                {locks.temperature ? 'Unlock' : 'Lock'}
+              </button>
+            </div>
+            <div className="form-group-lockable">
+              <div className="input-wrapper">
+                <label>Pressure (psi)</label>
+                <input type="number" value={pressure} onChange={(e) => setPressure(e.target.value)} step="0.1" disabled={locks.pressure} />
+              </div>
+              <button type="button" onClick={() => handleLockToggle('pressure')} className={`lock-btn ${locks.pressure ? 'locked' : ''}`}>
+                {locks.pressure ? 'Unlock' : 'Lock'}
+              </button>
+            </div>
+            <div className="form-group-lockable">
+              <div className="input-wrapper">
+                <label>Speed (rpm)</label>
+                <input type="number" value={speed} onChange={(e) => setSpeed(e.target.value)} disabled={locks.speed} />
+              </div>
+              <button type="button" onClick={() => handleLockToggle('speed')} className={`lock-btn ${locks.speed ? 'locked' : ''}`}>
+                {locks.speed ? 'Unlock' : 'Lock'}
+              </button>
+            </div>
+            <button type="submit" disabled={isLoading}>{isLoading ? '...' : 'Find Best Parameters'}</button>
+          </form>
+        </div>
+
+        {/* --- Panel 3: Dedicated Output Area --- */}
+        <div className="output-panel">
+            <h2>Optimal Settings Result</h2>
+            <div className="result-display">
+                {isLoading && !prediction && <p>Searching for parameters...</p>}
+                {error && !prediction && <p className="error">{error}</p>}
+                {optimalParams && (
+                <div className="optimal-params">
+                    <p>Found settings for a target of <strong>{targetQuality}</strong></p>
+                    <ul>
+                    <li><strong>Temp:</strong> {optimalParams.best_parameters.temperature}°C</li>
+                    <li><strong>Pressure:</strong> {optimalParams.best_parameters.pressure} psi</li>
+                    <li><strong>Speed:</strong> {optimalParams.best_parameters.speed} rpm</li>
+                    </ul>
+                    <h3>Achieved Quality: <span>{optimalParams.achieved_quality.toFixed(2)}</span></h3>
+                </div>
+                )}
+            </div>
         </div>
       </main>
     </div>
