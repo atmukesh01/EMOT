@@ -1,0 +1,24 @@
+Project Plan: September 23 - October 5
+Phase 1: Setup & Data Exploration (Sep 23-25)
+
+Day 1 (Today): Project Setup, Virtual Environment, and Synthetic Data Generation.
+
+Day 2: Exploratory Data Analysis (EDA) - Understanding the data.
+
+Day 3: Data Cleaning and Preprocessing.
+
+Phase 2: Model Building & Optimization (Sep 26 - Oct 1)
+
+Day 4: Establish a Baseline Model.
+
+Day 5-7: Feature Engineering.
+
+Day 8-9: Hyperparameter Tuning (Model Optimization).
+
+Phase 3: Evaluation & Finalization (Oct 2-5)
+
+Day 10: Final Model Evaluation on the Test Set.
+
+Day 11-12: Saving the Model & Writing a Simple Prediction Script.
+
+Day 13 (Oct 5): Project Review and Next Steps.

@@ -1,0 +1,52 @@
+{% extends 'predictor/base.html' %}
+
+{% block content %}
+<div class="predict-quality-container" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="panel">
+        <h2>Predict Quality from Parameters</h2>
+        <form method="post" action="{% url 'predict_quality' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="temperature">Temperature (°C)</label>
+                <input type="number" id="temperature" name="temperature" value="{{ request.POST.temperature|default:'150' }}" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="pressure">Pressure (psi)</label>
+                <input type="number" id="pressure" name="pressure" value="{{ request.POST.pressure|default:'50' }}" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="speed">Speed (rpm)</label>
+                <input type="number" id="speed" name="speed" value="{{ request.POST.speed|default:'1000' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="viscosity">Viscosity (Pa·s)</label>
+                <input type="number" id="viscosity" name="viscosity" value="{{ request.POST.viscosity|default:'15' }}" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="maintenance">Hours Since Maintenance</label>
+                <input type="number" id="maintenance" name="maintenance" value="{{ request.POST.maintenance|default:'100' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="cycle_time">Cycle Time (s)</label>
+                <input type="number" id="cycle_time" name="cycle_time" value="{{ request.POST.cycle_time|default:'30' }}" step="0.1" required>
+            </div>
+
+            <button type="submit">Predict Quality</button>
+        </form>
+    </div>
+    <div class="output-panel">
+        <h2>Prediction Result</h2>
+        <div class="result-display">
+            {% if prediction is not None %}
+                <div class="prediction">
+                    <p>Predicted Quality Score:</p>
+                    <span>{{ prediction|floatformat:2 }}</span>
+                </div>
+            {% else %}
+                <p>Submit parameters to see a prediction.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

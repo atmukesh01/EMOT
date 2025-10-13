@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Process Optimization Tool</title>
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="dashboard">
+        <div class="title-container">
+            <h1 class="main-title">Process and Product Optimization Tool</h1>
+            <p class="subtitle">Plastic Reuse System</p>
+        </div>
+        <nav>
+            <a href="{% url 'predict_quality' %}" class="nav-button {% if request.resolver_match.url_name == 'predict_quality' %}active{% endif %}">Predict Quality</a>
+            <a href="{% url 'find_params' %}" class="nav-button {% if request.resolver_match.url_name == 'find_params' %}active{% endif %}">Find Best Parameters</a>
+            <a href="{% url 'requirements' %}" class="nav-button {% if request.resolver_match.url_name == 'requirements' %}active{% endif %}">Requirements</a>
+            <a href="{% url 'processes' %}" class="nav-button {% if request.resolver_match.url_name == 'processes' %}active{% endif %}">Processes</a>
+            <a href="{% url 'visualize' %}" class="nav-button {% if request.resolver_match.url_name == 'visualize' %}active{% endif %}">Visualize</a>
+        </nav>
+        <main class="{% if request.resolver_match.url_name == 'predict_quality' or request.resolver_match.url_name == 'find_params' %}interactive-layout{% else %}full-screen-layout{% endif %}">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

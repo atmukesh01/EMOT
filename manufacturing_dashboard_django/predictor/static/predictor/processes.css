@@ -1,0 +1,18 @@
+.simulation-controls { display: flex; gap: 15px; margin-bottom: 30px; }
+.simulation-controls button { width: auto; padding: 10px 20px; font-weight: 600; cursor: pointer; }
+.simulation-controls button:disabled { background-color: #ccc; cursor: not-allowed; }
+.timeline-container-horizontal { position: relative; width: 100%; padding: 20px 0; }
+.timeline-container-horizontal::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 4px; height: 100%; background-color: #ccc; z-index: 1; }
+.timeline-step { position: relative; width: 50%; padding: 10px 40px; box-sizing: border-box; margin-bottom: 20px; }
+.timeline-step.left { left: 0; text-align: right; }
+.timeline-step.right { left: 50%; text-align: left; }
+.step-node { position: absolute; top: 20px; width: 50px; height: 50px; border-radius: 50%; background-color: #ccc; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border: 4px solid #f0f2f5; z-index: 2; transition: all 0.4s ease; }
+.timeline-step.left .step-node { right: -25px; }
+.timeline-step.right .step-node { left: -25px; }
+.step-details h3 { margin: 0; color: #333; font-size: 1.2rem; }
+.step-details p { margin-top: 5px; color: #666; font-size: 0.9rem; }
+.step-details::after { content: ''; position: absolute; top: 28px; width: 0; height: 0; border-style: solid; }
+.timeline-step.left .step-details::after { right: 20px; border-width: 8px 0 8px 12px; border-color: transparent transparent transparent white; }
+.timeline-step.right .step-details::after { left: 20px; border-width: 8px 12px 8px 0; border-color: transparent white transparent transparent; }
+.timeline-step.completed .step-node { background-color: #007bff; }
+.timeline-step.active .step-node { background-color: #28a745; transform: scale(1.1); }
