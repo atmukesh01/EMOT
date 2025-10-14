@@ -16,11 +16,9 @@
         <nav>
             <a href="{% url 'predict_quality' %}" class="nav-button {% if request.resolver_match.url_name == 'predict_quality' %}active{% endif %}">Predict Quality</a>
             <a href="{% url 'find_params' %}" class="nav-button {% if request.resolver_match.url_name == 'find_params' %}active{% endif %}">Find Best Parameters</a>
-            <a href="{% url 'requirements' %}" class="nav-button {% if request.resolver_match.url_name == 'requirements' %}active{% endif %}">Requirements</a>
-            <a href="{% url 'processes' %}" class="nav-button {% if request.resolver_match.url_name == 'processes' %}active{% endif %}">Processes</a>
             <a href="{% url 'visualize' %}" class="nav-button {% if request.resolver_match.url_name == 'visualize' %}active{% endif %}">Visualize</a>
         </nav>
-        <main class="{% if request.resolver_match.url_name == 'predict_quality' or request.resolver_match.url_name == 'find_params' %}interactive-layout{% else %}full-screen-layout{% endif %}">
+        <main class="{% if 'predict' in request.resolver_match.url_name or 'find_params' in request.resolver_match.url_name %}interactive-layout{% else %}full-screen-layout{% endif %}">
             {% block content %}{% endblock %}
         </main>
     </div>

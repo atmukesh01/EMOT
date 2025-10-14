@@ -1,28 +1,18 @@
 {% extends 'predictor/base.html' %}
 {% block content %}
-<div class="find-parameters-container">
+<div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
     <div class="panel">
         <h2>Find Parameters for a Quality Score</h2>
-        <form method="post">
+        <form method="post" action="{% url 'find_params' %}">
             {% csrf_token %}
-            <div class="form-group"><label>Desired Quality Score</label><input type="number" name="target_quality" value="98" step="0.1" /></div>
+            <div class="form-group"><label>Desired Quality Score</label><input type="number" name="target_quality" value="{{ request.POST.target_quality|default:'98' }}" step="0.1" /></div>
             <button type="submit">Find Best Parameters</button>
         </form>
     </div>
     <div class="output-panel">
         <h2>Optimal Settings Result</h2>
         <div class="result-display">
-            {% if result %}
-            <div class="optimal-params">
-                <p>Settings for a target of <strong>{{ target_quality }}</strong></p>
-                <ul>
-                {% for key, value in result.best_parameters.items %}
-                    <li><strong>{{ key|capfirst|slice:":10" }}:</strong> {{ value }}</li>
-                {% endfor %}
-                </ul>
-                <h3>Achieved Quality: <span>{{ result.achieved_quality|floatformat:2 }}</span></h3>
-            </div>
-            {% endif %}
+            {% if result %}<div class="optimal-params"><p>Settings for a target of <strong>{{ target_quality }}</strong></p><ul>{% for key, value in result.best_parameters.items %}<li><strong>{{ key|capfirst }}:</strong> {{ value }}</li>{% endfor %}</ul><h3>Achieved Quality: <span>{{ result.achieved_quality|floatformat:2 }}</span></h3></div>{% endif %}
         </div>
     </div>
 </div>

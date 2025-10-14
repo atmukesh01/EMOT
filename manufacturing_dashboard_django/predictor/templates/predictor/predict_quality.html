@@ -1,52 +1,71 @@
 {% extends 'predictor/base.html' %}
 
 {% block content %}
-<div class="predict-quality-container" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
     <div class="panel">
         <h2>Predict Quality from Parameters</h2>
-        <form method="post" action="{% url 'predict_quality' %}">
+        <form id="predict-form" method="post" action="{% url 'predict_quality' %}">
             {% csrf_token %}
-
-            <div class="form-group">
-                <label for="temperature">Temperature (°C)</label>
-                <input type="number" id="temperature" name="temperature" value="{{ request.POST.temperature|default:'150' }}" step="0.1" required>
-            </div>
-            <div class="form-group">
-                <label for="pressure">Pressure (psi)</label>
-                <input type="number" id="pressure" name="pressure" value="{{ request.POST.pressure|default:'50' }}" step="0.1" required>
-            </div>
-            <div class="form-group">
-                <label for="speed">Speed (rpm)</label>
-                <input type="number" id="speed" name="speed" value="{{ request.POST.speed|default:'1000' }}" required>
-            </div>
-            <div class="form-group">
-                <label for="viscosity">Viscosity (Pa·s)</label>
-                <input type="number" id="viscosity" name="viscosity" value="{{ request.POST.viscosity|default:'15' }}" step="0.1" required>
-            </div>
-            <div class="form-group">
-                <label for="maintenance">Hours Since Maintenance</label>
-                <input type="number" id="maintenance" name="maintenance" value="{{ request.POST.maintenance|default:'100' }}" required>
-            </div>
-            <div class="form-group">
-                <label for="cycle_time">Cycle Time (s)</label>
-                <input type="number" id="cycle_time" name="cycle_time" value="{{ request.POST.cycle_time|default:'30' }}" step="0.1" required>
-            </div>
-
+            <div class="form-group"><label>Temperature (°C)</label><input type="number" name="temperature" value="150" step="0.1" required></div>
+            <div class="form-group"><label>Pressure (psi)</label><input type="number" name="pressure" value="50" step="0.1" required></div>
+            <div class="form-group"><label>Speed (rpm)</label><input type="number" name="speed" value="1000" required></div>
+            <div class="form-group"><label>Viscosity (Pa·s)</label><input type="number" name="viscosity" value="15" step="0.1" required></div>
+            <div class="form-group"><label>Hours Since Maintenance</label><input type="number" name="maintenance" value="100" required></div>
+            <div class="form-group"><label>Cycle Time (s)</label><input type="number" name="cycle_time" value="30" step="0.1" required></div>
             <button type="submit">Predict Quality</button>
         </form>
     </div>
     <div class="output-panel">
         <h2>Prediction Result</h2>
-        <div class="result-display">
-            {% if prediction is not None %}
-                <div class="prediction">
-                    <p>Predicted Quality Score:</p>
-                    <span>{{ prediction|floatformat:2 }}</span>
-                </div>
-            {% else %}
-                <p>Submit parameters to see a prediction.</p>
-            {% endif %}
+        <div id="result-display-box" class="result-display">
+            <p>Submit parameters to see a prediction.</p>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Find the form and the result box on the page
+    const predictForm = document.getElementById('predict-form');
+    const resultBox = document.getElementById('result-display-box');
+
+    // This function runs when the "Predict Quality" button is clicked
+    predictForm.addEventListener('submit', function(event) {
+        // 1. Prevent the default browser page reload
+        event.preventDefault();
+
+        // 2. Show a "Loading..." message to the user
+        resultBox.innerHTML = '<p>Predicting with ML model...</p>';
+
+        // 3. Gather all the data from the form
+        const formData = new FormData(predictForm);
+
+        // 4. Send the data to the Django server in the background using fetch
+        fetch(predictForm.action, {
+            method: 'POST',
+            body: formData,
+            // Important: This header is required for Django's security
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json()) // Get the JSON response from the server
+        .then(data => {
+            // 5. Display the prediction result from the ML model in the output box
+            const quality = data.predicted_quality.toFixed(2);
+            resultBox.innerHTML = `
+                <div class="prediction">
+                    <p>Predicted Quality Score:</p>
+                    <span>${quality}</span>
+                </div>
+            `;
+        })
+        .catch(error => {
+            // Handle any errors (e.g., if the server is down)
+            console.error('Error:', error);
+            resultBox.innerHTML = '<p class="error">An error occurred. Could not get prediction.</p>';
+        });
+    });
+</script>
 {% endblock %}
