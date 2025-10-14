@@ -6,12 +6,12 @@
         <h2>Predict Quality from Parameters</h2>
         <form id="predict-form" method="post" action="{% url 'predict_quality' %}">
             {% csrf_token %}
-            <div class="form-group"><label>Temperature (°C)</label><input type="number" name="temperature" value="150" step="0.1" required></div>
-            <div class="form-group"><label>Pressure (psi)</label><input type="number" name="pressure" value="50" step="0.1" required></div>
-            <div class="form-group"><label>Speed (rpm)</label><input type="number" name="speed" value="1000" required></div>
-            <div class="form-group"><label>Viscosity (Pa·s)</label><input type="number" name="viscosity" value="15" step="0.1" required></div>
-            <div class="form-group"><label>Hours Since Maintenance</label><input type="number" name="maintenance" value="100" required></div>
-            <div class="form-group"><label>Cycle Time (s)</label><input type="number" name="cycle_time" value="30" step="0.1" required></div>
+            <div class="form-group"><label>Temperature (°C)</label><input type="number" name="temperature" step="0.1" required></div>
+            <div class="form-group"><label>Pressure (psi)</label><input type="number" name="pressure" step="0.1" required></div>
+            <div class="form-group"><label>Speed (rpm)</label><input type="number" name="speed" required></div>
+            <div class="form-group"><label>Viscosity (Pa·s)</label><input type="number" name="viscosity" step="0.1" required></div>
+            <div class="form-group"><label>Hours Since Maintenance</label><input type="number" name="maintenance" required></div>
+            <div class="form-group"><label>Cycle Time (s)</label><input type="number" name="cycle_time" step="0.1" required></div>
             <button type="submit">Predict Quality</button>
         </form>
     </div>
@@ -26,45 +26,36 @@
 
 {% block extra_js %}
 <script>
-    // Find the form and the result box on the page
     const predictForm = document.getElementById('predict-form');
     const resultBox = document.getElementById('result-display-box');
 
-    // This function runs when the "Predict Quality" button is clicked
     predictForm.addEventListener('submit', function(event) {
-        // 1. Prevent the default browser page reload
         event.preventDefault();
-
-        // 2. Show a "Loading..." message to the user
         resultBox.innerHTML = '<p>Predicting with ML model...</p>';
-
-        // 3. Gather all the data from the form
         const formData = new FormData(predictForm);
 
-        // 4. Send the data to the Django server in the background using fetch
         fetch(predictForm.action, {
             method: 'POST',
             body: formData,
-            // Important: This header is required for Django's security
-            headers: {
-                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || 'Prediction failed.') });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.predicted_quality !== undefined) {
+                const quality = data.predicted_quality.toFixed(2);
+                resultBox.innerHTML = `<div class="prediction"><p>Predicted Quality Score:</p><span>${quality}</span></div>`;
+            } else {
+                throw new Error(data.error || "Invalid response from server.");
             }
         })
-        .then(response => response.json()) // Get the JSON response from the server
-        .then(data => {
-            // 5. Display the prediction result from the ML model in the output box
-            const quality = data.predicted_quality.toFixed(2);
-            resultBox.innerHTML = `
-                <div class="prediction">
-                    <p>Predicted Quality Score:</p>
-                    <span>${quality}</span>
-                </div>
-            `;
-        })
         .catch(error => {
-            // Handle any errors (e.g., if the server is down)
             console.error('Error:', error);
-            resultBox.innerHTML = '<p class="error">An error occurred. Could not get prediction.</p>';
+            resultBox.innerHTML = `<p class="error">${error.message}</p>`;
         });
     });
 </script>

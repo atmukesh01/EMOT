@@ -1,19 +1,104 @@
 {% extends 'predictor/base.html' %}
+
 {% block content %}
 <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
     <div class="panel">
         <h2>Find Parameters for a Quality Score</h2>
-        <form method="post" action="{% url 'find_params' %}">
+        <form id="find-params-form" method="post" action="{% url 'find_params' %}">
             {% csrf_token %}
-            <div class="form-group"><label>Desired Quality Score</label><input type="number" name="target_quality" value="{{ request.POST.target_quality|default:'98' }}" step="0.1" /></div>
+            <div class="form-group">
+                <label>Desired Quality Score</label>
+                <input type="number" name="target_quality" value="{{ target_quality|default:'' }}" step="0.1" required>
+            </div>
+
+            {% for param in params_config %}
+            <div class="form-group-lockable">
+                <div class="input-wrapper">
+                    <label>{{ param.label }}</label>
+                    <input type="number" name="{{ param.name }}" id="input-{{ param.name }}"
+                           value="{{ param.value }}"
+                           step="0.1" {% if param.is_locked %}disabled{% endif %}>
+                </div>
+                <button type="button" class="lock-btn {% if param.is_locked %}locked{% endif %}" onclick="toggleLock('{{ param.name }}')">
+                    {% if param.is_locked %}Unlock{% else %}Lock{% endif %}
+                </button>
+            </div>
+            {% endfor %}
+
+            <div id="hidden-locks-container">
+                {% if locked_keys %}
+                {% for key in locked_keys %}
+                    <input type="hidden" name="lock_{{ key }}" value="true">
+                {% endfor %}
+                {% endif %}
+            </div>
+
             <button type="submit">Find Best Parameters</button>
         </form>
     </div>
     <div class="output-panel">
         <h2>Optimal Settings Result</h2>
         <div class="result-display">
-            {% if result %}<div class="optimal-params"><p>Settings for a target of <strong>{{ target_quality }}</strong></p><ul>{% for key, value in result.best_parameters.items %}<li><strong>{{ key|capfirst }}:</strong> {{ value }}</li>{% endfor %}</ul><h3>Achieved Quality: <span>{{ result.achieved_quality|floatformat:2 }}</span></h3></div>{% endif %}
+            {% if formatted_results %}
+            <div class="optimal-params">
+                <p>Settings for a target of <strong>{{ target_quality }}</strong></p>
+                <ul>
+                {% for item in formatted_results %}
+                    <li {% if item.is_locked %}style="font-weight: bold; color: #0052cc;"{% endif %}>
+                        <strong>{{ item.label }}:</strong> {{ item.value }}
+                    </li>
+                {% endfor %}
+                </ul>
+                <h3>Achieved Quality: <span>{{ achieved_quality|floatformat:2 }}</span></h3>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleLock(paramName) {
+        const inputField = document.getElementById(`input-${paramName}`);
+        const lockButton = event.target;
+        const hiddenContainer = document.getElementById('hidden-locks-container');
+        const hiddenInput = document.querySelector(`input[name="lock_${paramName}"]`);
+
+        if (inputField.disabled) {
+            // --- UNLOCK ---
+            inputField.disabled = false;
+            lockButton.classList.remove('locked');
+            lockButton.textContent = 'Lock';
+            if (hiddenInput) {
+                hiddenInput.remove();
+            }
+        } else {
+            // --- LOCK ---
+            inputField.disabled = true;
+            lockButton.classList.add('locked');
+            lockButton.textContent = 'Unlock';
+            if (!hiddenInput) {
+                const newHiddenInput = document.createElement('input');
+                newHiddenInput.type = 'hidden';
+                newHiddenInput.name = `lock_${paramName}`;
+                newHiddenInput.value = 'true';
+                hiddenContainer.appendChild(newHiddenInput);
+            }
+        }
+    }
+
+    // --- CRITICAL FIX ---
+    // This script ensures that the values of locked (disabled) inputs are
+    // sent to the server when the form is submitted.
+    const findParamsForm = document.getElementById('find-params-form');
+    findParamsForm.addEventListener('submit', function() {
+        // Find all disabled inputs within this specific form
+        const disabledInputs = findParamsForm.querySelectorAll('input:disabled');
+        // Re-enable them just for a moment so their values are included in the submission
+        disabledInputs.forEach(input => {
+            input.disabled = false;
+        });
+    });
+</script>
 {% endblock %}
