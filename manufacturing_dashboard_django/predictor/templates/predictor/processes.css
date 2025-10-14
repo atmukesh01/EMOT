@@ -1,0 +1,109 @@
+/* --- Animation Keyframes --- */
+@keyframes card-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.process-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    /* --- Animation Properties --- */
+    opacity: 0; /* Start hidden for the animation */
+    animation: card-fade-in 0.5s ease-out forwards;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* --- Staggered animation delay for each card --- */
+.process-card:nth-child(1) { animation-delay: 0.1s; }
+.process-card:nth-child(2) { animation-delay: 0.2s; }
+.process-card:nth-child(3) { animation-delay: 0.3s; }
+.process-card:nth-child(4) { animation-delay: 0.4s; }
+.process-card:nth-child(5) { animation-delay: 0.5s; }
+.process-card:nth-child(6) { animation-delay: 0.6s; }
+
+
+.process-card:hover {
+    /* --- Enhanced Hover Effect --- */
+    transform: translateY(-8px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+}
+
+.process-icon {
+    font-size: 3.5rem;
+    line-height: 1;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+}
+
+/* --- Icon animation on card hover --- */
+.process-card:hover .process-icon {
+    transform: rotate(10deg) scale(1.1);
+}
+
+.process-name {
+    margin: 0 0 10px 0;
+    color: #0052cc;
+    font-size: 1.4rem;
+}
+
+.process-description {
+    color: #555;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    flex-grow: 1; /* Makes the description take up available space */
+}
+
+.process-details {
+    margin-top: 20px;
+    border-top: 1px solid #e9ecef;
+    padding-top: 15px;
+    font-size: 0.9rem;
+}
+
+.detail-item {
+    margin-bottom: 10px;
+}
+
+.detail-item strong {
+    color: #333;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    background-color: #e7f3ff;
+    color: #0052cc;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.process-card:hover .tag {
+    background-color: #0052cc;
+    color: #ffffff;
+}

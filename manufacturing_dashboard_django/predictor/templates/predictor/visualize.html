@@ -1,0 +1,70 @@
+{% extends 'predictor/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'predictor/Visualize.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="visualize-container">
+    <div class="upload-section">
+        <h2>Upload Plastic Image for Analysis</h2>
+        <p>A simulated sensor will generate a chemical signature, and our AI will identify the plastic to generate a reprocessing plan.</p>
+        
+        <form method="post" enctype="multipart/form-data" action="{% url 'visualize' %}">
+            {% csrf_token %}
+            <div class="uploader-box">
+                <img id="image-preview" src="#" alt="Image Preview" style="display:none;" class="image-preview" />
+                <div id="placeholder-text" class="placeholder-text">Image Preview</div>
+                
+                <input type="file" name="plastic_image" id="image-upload" accept="image/*" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer;">
+            </div>
+
+            <button type="submit" style="position: relative; margin-top: 20px;">Identify & Plan</button>
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="error-panel">{{ error }}</div>
+    {% endif %}
+
+    {% if result %}
+        <div class="results-section">
+            <h2>Analysis Complete</h2>
+            <div class="result-summary">
+                <h3>Identified: <strong>{{ result.name }}</strong></h3>
+                <p>Base Viscosity: <strong>{{ result.viscosity }}</strong></p>
+            </div>
+            <h3>Recommended Reprocessing Steps</h3>
+            <div class="steps-timeline">
+                {% for step in result.steps %}
+                <div class="step-card">
+                    <div class="step-icon">{{ step.icon }}</div>
+                    <div class="step-content">
+                        <h4>{{ forloop.counter }}. {{ step.name }}</h4>
+                        <p>{{ step.description }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p>Reprocessing steps for this plastic type are not yet defined.</p>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('image-upload').onchange = function (evt) {
+        const [file] = evt.target.files;
+        if (file) {
+            const preview = document.getElementById('image-preview');
+            const placeholder = document.getElementById('placeholder-text');
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+    };
+</script>
+{% endblock %}

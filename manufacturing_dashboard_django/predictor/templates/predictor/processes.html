@@ -1,0 +1,38 @@
+{% extends 'predictor/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'predictor/Processes.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="info-panel">
+    <h2>Plastic Reforming Processes</h2>
+    <p>Explore various innovative methods used to recycle, reform, and upcycle plastic waste into valuable new materials and products.</p>
+</div>
+
+<div class="process-grid">
+    {% for process in processes %}
+    <div class="process-card">
+        <div class="process-icon">{{ process.icon }}</div>
+        <h3 class="process-name">{{ process.name }}</h3>
+        <p class="process-description">{{ process.description }}</p>
+        
+        <div class="process-details">
+            <div class="detail-item">
+                <strong>Suitable For:</strong>
+                <div class="tags">
+                    {% for plastic in process.suitable_for %}
+                        <span class="tag">{{ plastic }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="detail-item">
+                <strong>Primary Output:</strong>
+                <span>{{ process.output }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
