@@ -39,12 +39,7 @@ def get_quality_prediction(params):
         return None
 
 def find_best_parameters(target_quality, locked_params={}):
-    """
-    Searches for the best parameter combination to achieve a target quality,
-    keeping any locked parameters fixed.
-    """
     if quality_model is None: return None
-
     num_samples = 10000
     candidates = {}
     param_configs = {
@@ -56,13 +51,10 @@ def find_best_parameters(target_quality, locked_params={}):
         'cycle_time': ('cycle_time_s', 25, 35)
     }
 
-    # For each parameter, check if it's in the locked_params dictionary.
     for param, (col, low, high) in param_configs.items():
         if param in locked_params and locked_params.get(param):
-            # If locked, fill the array with the static locked value.
             candidates[col] = np.full(num_samples, float(locked_params[param]))
         else:
-            # If not locked, generate random values as before.
             candidates[col] = np.random.uniform(low, high, num_samples)
 
     candidates_df = pd.DataFrame(candidates)
