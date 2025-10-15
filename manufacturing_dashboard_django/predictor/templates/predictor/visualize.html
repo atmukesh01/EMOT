@@ -1,70 +1,135 @@
 {% extends 'predictor/base.html' %}
-{% load static %}
-
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static 'predictor/Visualize.css' %}">
-{% endblock %}
 
 {% block content %}
-<div class="visualize-container">
-    <div class="upload-section">
-        <h2>Upload Plastic Image for Analysis</h2>
-        <p>A simulated sensor will generate a chemical signature, and our AI will identify the plastic to generate a reprocessing plan.</p>
-        
-        <form method="post" enctype="multipart/form-data" action="{% url 'visualize' %}">
-            {% csrf_token %}
-            <div class="uploader-box">
-                <img id="image-preview" src="#" alt="Image Preview" style="display:none;" class="image-preview" />
-                <div id="placeholder-text" class="placeholder-text">Image Preview</div>
-                
-                <input type="file" name="plastic_image" id="image-upload" accept="image/*" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer;">
-            </div>
+<div class="info-panel" style="text-align: center;">
+    <h2>Visualize Plastic Type</h2>
+    <p>Upload an image of a plastic item. The AI model will identify the material and provide product-specific manufacturing guides.</p>
+</div>
 
-            <button type="submit" style="position: relative; margin-top: 20px;">Identify & Plan</button>
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; margin-top: 20px;">
+    <div class="panel">
+        <h3>Upload Image</h3>
+        <form id="upload-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="file" name="plastic_image" id="plastic_image_input" accept="image/*" required>
+            </div>
+            <button type="submit">Identify Plastic</button>
         </form>
     </div>
 
-    {% if error %}
-        <div class="error-panel">{{ error }}</div>
-    {% endif %}
-
-    {% if result %}
-        <div class="results-section">
-            <h2>Analysis Complete</h2>
-            <div class="result-summary">
-                <h3>Identified: <strong>{{ result.name }}</strong></h3>
-                <p>Base Viscosity: <strong>{{ result.viscosity }}</strong></p>
-            </div>
-            <h3>Recommended Reprocessing Steps</h3>
-            <div class="steps-timeline">
-                {% for step in result.steps %}
-                <div class="step-card">
-                    <div class="step-icon">{{ step.icon }}</div>
-                    <div class="step-content">
-                        <h4>{{ forloop.counter }}. {{ step.name }}</h4>
-                        <p>{{ step.description }}</p>
+    <div class="output-panel">
+        <h3>Identification Result</h3>
+        <div id="result-container" class="result-display" style="flex-direction: column; align-items: stretch; text-align: left; padding: 20px;">
+            {% if result %}
+                <div class="identification-header">
+                    {% if uploaded_image %}
+                        <img src="data:image/jpeg;base64,{{ uploaded_image }}" alt="Uploaded Plastic" class="uploaded-img">
+                    {% endif %}
+                    <div class="identification-summary">
+                        <h2>{{ result.name }}</h2>
+                        <p>Confidence: <strong style="color: #28a745;">{{ confidence }}</strong></p>
+                        <p>Typical Viscosity: <strong>{{ result.viscosity }}</strong></p>
                     </div>
                 </div>
+
+                {% for product_name, steps in result.product_processes.items %}
+                    <div class="product-process-section">
+                        <h4>Manufacturing Guide for: <span class="product-title">{{ product_name }}</span></h4>
+                        <div class="process-table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Step</th>
+                                        <th>Process Name</th>
+                                        <th>Temperature</th>
+                                        <th>Pressure</th>
+                                        <th>Speed</th>
+                                        <th>Cycle Time</th>
+                                        <th>Maintenance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for process in steps %}
+                                    <tr>
+                                        <td>{{ process.step }}</td>
+                                        <td><strong>{{ process.name }}</strong></td>
+                                        <td>{{ process.temp }}</td>
+                                        <td>{{ process.pressure }}</td>
+                                        <td>{{ process.speed }}</td>
+                                        <td>{{ process.cycle_time }}</td>
+                                        <td>{{ process.maintenance }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 {% empty %}
-                <p>Reprocessing steps for this plastic type are not yet defined.</p>
+                    <p style="margin-top: 20px;">No detailed processing parameters found for this plastic type.</p>
                 {% endfor %}
-            </div>
+                {% elif error %}
+                 <div class="error-container">
+                    {% if uploaded_image %}
+                        <img src="data:image/jpeg;base64,{{ uploaded_image }}" alt="Uploaded Image" class="uploaded-img-error">
+                    {% endif %}
+                    <p class="error">{{ error }}</p>
+                </div>
+            {% else %}
+                <p>Upload an image to see the identification results.</p>
+            {% endif %}
         </div>
-    {% endif %}
+    </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    document.getElementById('image-upload').onchange = function (evt) {
-        const [file] = evt.target.files;
-        if (file) {
-            const preview = document.getElementById('image-preview');
-            const placeholder = document.getElementById('placeholder-text');
-            preview.src = URL.createObjectURL(file);
-            preview.style.display = 'block';
-            placeholder.style.display = 'none';
-        }
-    };
-</script>
+{% block extra_css %}
+<style>
+    .uploaded-img {
+        max-width: 150px; max-height: 150px; border-radius: 8px;
+        object-fit: cover; margin-right: 20px;
+    }
+    .identification-header {
+        display: flex; align-items: center; border-bottom: 2px solid #f0f2f5;
+        padding-bottom: 15px; margin-bottom: 15px;
+    }
+    .process-table-container { overflow-x: auto; }
+    table {
+        width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;
+    }
+    th, td {
+        padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e5ec;
+    }
+    thead th {
+        background-color: #f7f9fc; color: #1c3d5a; font-weight: 600;
+    }
+    tbody tr:nth-child(even) { background-color: #fdfdff; }
+    tbody tr:hover { background-color: #f0f4f8; }
+    td:first-child { font-weight: bold; text-align: center; }
+
+    /* --- NEW STYLES --- */
+    .product-process-section {
+        margin-top: 25px;
+        border-top: 1px solid #e0e5ec;
+        padding-top: 20px;
+    }
+    .product-process-section:first-of-type {
+        margin-top: 15px;
+        border-top: none;
+        padding-top: 0;
+    }
+    .product-title {
+        color: #0065ff;
+        font-weight: 600;
+    }
+
+    .error-container {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; text-align: center; width: 100%;
+    }
+    .uploaded-img-error {
+        max-width: 150px; max-height: 150px; border-radius: 8px;
+        object-fit: cover; margin-bottom: 20px;
+    }
+</style>
 {% endblock %}
