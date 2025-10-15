@@ -1,24 +1,50 @@
 {% extends 'predictor/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'predictor/predict_quality.css' %}">
+{% endblock %}
 
 {% block content %}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-    <div class="panel">
-        <h2>Predict Quality from Parameters</h2>
+<div class="predict-container-compact">
+    <!-- Left: Input Form -->
+    <div class="panel panel-left">
+        <h2>🧠 Predict Quality</h2>
         <form id="predict-form" method="post" action="{% url 'predict_quality' %}">
             {% csrf_token %}
-            <div class="form-group"><label>Temperature (°C)</label><input type="number" name="temperature" step="0.1" required></div>
-            <div class="form-group"><label>Pressure (psi)</label><input type="number" name="pressure" step="0.1" required></div>
-            <div class="form-group"><label>Speed (rpm)</label><input type="number" name="speed" required></div>
-            <div class="form-group"><label>Viscosity (Pa·s)</label><input type="number" name="viscosity" step="0.1" required></div>
-            <div class="form-group"><label>Hours Since Maintenance</label><input type="number" name="maintenance" required></div>
-            <div class="form-group"><label>Cycle Time (s)</label><input type="number" name="cycle_time" step="0.1" required></div>
-            <button type="submit">Predict Quality</button>
+            <div class="form-group">
+                <label>Temperature (°C)</label>
+                <input type="number" name="temperature" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label>Pressure (psi)</label>
+                <input type="number" name="pressure" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label>Speed (rpm)</label>
+                <input type="number" name="speed" required>
+            </div>
+            <div class="form-group">
+                <label>Viscosity (Pa·s)</label>
+                <input type="number" name="viscosity" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label>Hours Since Maintenance</label>
+                <input type="number" name="maintenance" required>
+            </div>
+            <div class="form-group">
+                <label>Cycle Time (s)</label>
+                <input type="number" name="cycle_time" step="0.1" required>
+            </div>
+            <button type="submit" class="btn-predict">🔍 Predict</button>
         </form>
     </div>
-    <div class="output-panel">
-        <h2>Prediction Result</h2>
+
+    <!-- Right: Prediction Result -->
+    <div class="panel panel-right">
+        <h2>📊 Result</h2>
         <div id="result-display-box" class="result-display">
-            <p>Submit parameters to see a prediction.</p>
+            <p>Submit parameters to see prediction.</p>
         </div>
     </div>
 </div>
@@ -26,37 +52,42 @@
 
 {% block extra_js %}
 <script>
-    const predictForm = document.getElementById('predict-form');
-    const resultBox = document.getElementById('result-display-box');
+const predictForm = document.getElementById('predict-form');
+const resultBox = document.getElementById('result-display-box');
 
-    predictForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        resultBox.innerHTML = '<p>Predicting with ML model...</p>';
-        const formData = new FormData(predictForm);
+predictForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    resultBox.innerHTML = '<p class="loading">Predicting...</p>';
+    const formData = new FormData(predictForm);
 
-        fetch(predictForm.action, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw new Error(err.error || 'Prediction failed.') });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.predicted_quality !== undefined) {
-                const quality = data.predicted_quality.toFixed(2);
-                resultBox.innerHTML = `<div class="prediction"><p>Predicted Quality Score:</p><span>${quality}</span></div>`;
-            } else {
-                throw new Error(data.error || "Invalid response from server.");
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            resultBox.innerHTML = `<p class="error">${error.message}</p>`;
-        });
+    fetch(predictForm.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.error || 'Prediction failed.') });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.predicted_quality !== undefined) {
+            const quality = data.predicted_quality.toFixed(2);
+            resultBox.innerHTML = `
+                <div class="prediction">
+                    <p>Predicted Quality Score:</p>
+                    <span class="quality-score">${quality}</span>
+                </div>
+            `;
+        } else {
+            throw new Error(data.error || "Invalid response from server.");
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        resultBox.innerHTML = `<p class="error">${error.message}</p>`;
     });
+});
 </script>
 {% endblock %}

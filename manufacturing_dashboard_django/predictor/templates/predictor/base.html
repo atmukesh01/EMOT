@@ -3,25 +3,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Process Optimization Tool</title>
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}">
+    <title>Process Optimization Tool | AI-Powered System</title>
+    <link rel="stylesheet" href="{% static 'predictor/base.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="dashboard">
-        <div class="title-container">
-            <h1 class="main-title">Process and Product Optimization Tool</h1>
-            <p class="subtitle">Plastic Reuse System</p>
-        </div>
-        <nav>
-            <a href="{% url 'predict_quality' %}" class="nav-button {% if request.resolver_match.url_name == 'predict_quality' %}active{% endif %}">Predict Quality</a>
-            <a href="{% url 'find_params' %}" class="nav-button {% if request.resolver_match.url_name == 'find_params' %}active{% endif %}">Find Best Parameters</a>
-            <a href="{% url 'visualize' %}" class="nav-button {% if request.resolver_match.url_name == 'visualize' %}active{% endif %}">Visualize</a>
-        </nav>
-        <main class="{% if 'predict' in request.resolver_match.url_name or 'find_params' in request.resolver_match.url_name %}interactive-layout{% else %}full-screen-layout{% endif %}">
-            {% block content %}{% endblock %}
+        <!-- Header -->
+        <header class="header">
+            <div class="title-container">
+                <h1 class="main-title">Process & Product Optimization Tool</h1>
+                <p class="subtitle">Powered by Artificial Intelligence and Machine Learning</p>
+            </div>
+            <nav class="nav-bar">
+                <a href="{% url 'predict_quality' %}" class="nav-button {% if request.resolver_match.url_name == 'predict_quality' %}active{% endif %}">
+                    🔍 Predict Quality
+                </a>
+                <a href="{% url 'find_params' %}" class="nav-button {% if request.resolver_match.url_name == 'find_params' %}active{% endif %}">
+                    ⚙️ Optimize Parameters
+                </a>
+                <a href="{% url 'visualize' %}" class="nav-button {% if request.resolver_match.url_name == 'visualize' %}active{% endif %}">
+                    📊 Visualize Insights
+                </a>
+            </nav>
+        </header>
+
+        <!-- Navigation -->
+        
+
+        <!-- Main Content -->
+        <main class="content-area {% if 'predict' in request.resolver_match.url_name or 'find_params' in request.resolver_match.url_name %}interactive-layout{% else %}full-screen-layout{% endif %}">
+            {% block content %}
+            <section class="intro">
+                <h2>Welcome to the AI-Driven Process Optimization Platform</h2>
+                <p>
+                    This intelligent system leverages **Machine Learning** and **Predictive Analytics** to help industries enhance 
+                    product quality, minimize waste, and optimize manufacturing parameters in **plastic reuse systems**.
+                </p>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>🤖 Smart Prediction</h3>
+                        <p>Use ML algorithms to predict output quality based on your process parameters.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚙️ Parameter Optimization</h3>
+                        <p>Find the most efficient parameter combination using data-driven optimization models.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📈 Data Visualization</h3>
+                        <p>Explore interactive charts to understand patterns, correlations, and model performance.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🧩 Explainable AI</h3>
+                        <p>Understand why models make certain predictions through interpretability features.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ai-summary">
+                <h2>How It Works</h2>
+                <ol>
+                    <li>Input process parameters related to temperature, pressure, and material ratios.</li>
+                    <li>Our trained ML model predicts the resulting product quality score.</li>
+                    <li>The system suggests optimized parameters to maximize performance and minimize cost.</li>
+                    <li>Visual insights and model analytics help validate and refine your process.</li>
+                </ol>
+            </section>
+
+            <section class="footer-info">
+                <p>© 2025 Process Optimization AI System | Developed with ❤️ using Django & TensorFlow</p>
+            </section>
+            {% endblock %}
         </main>
     </div>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

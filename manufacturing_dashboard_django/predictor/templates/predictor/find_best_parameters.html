@@ -1,23 +1,34 @@
 {% extends 'predictor/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'predictor/find_params.css' %}">
+{% endblock %}
 
 {% block content %}
-<div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
-    <div class="panel">
-        <h2>Find Parameters for a Quality Score</h2>
+<div class="find-params-container">
+    <!-- Left Panel: Input Form -->
+    <div class="panel panel-left">
+        <h2>🧠 Find Optimal Parameters</h2>
+        <p class="panel-desc">
+            Enter your desired quality score and lock parameters that must remain fixed. 
+            The AI model will suggest the best possible operational settings.
+        </p>
+
         <form id="find-params-form" method="post" action="{% url 'find_params' %}">
             {% csrf_token %}
+            
             <div class="form-group">
-                <label>Desired Quality Score</label>
-                <input type="number" name="target_quality" value="{{ target_quality|default:'' }}" step="0.1" required>
+                <label for="target_quality">🎯 Desired Quality Score</label>
+                <input type="number" id="target_quality" name="target_quality" value="{{ target_quality|default:'' }}" step="0.1" required>
             </div>
 
             {% for param in params_config %}
             <div class="form-group-lockable">
                 <div class="input-wrapper">
-                    <label>{{ param.label }}</label>
-                    <input type="number" name="{{ param.name }}" id="input-{{ param.name }}"
-                           value="{{ param.value }}"
-                           step="0.1" {% if param.is_locked %}disabled{% endif %}>
+                    <label for="input-{{ param.name }}">{{ param.label }}</label>
+                    <input type="number" id="input-{{ param.name }}" name="{{ param.name }}" 
+                           value="{{ param.value }}" step="0.1" {% if param.is_locked %}disabled{% endif %}>
                 </div>
                 <button type="button" class="lock-btn {% if param.is_locked %}locked{% endif %}" onclick="toggleLock('{{ param.name }}')">
                     {% if param.is_locked %}Unlock{% else %}Lock{% endif %}
@@ -27,78 +38,74 @@
 
             <div id="hidden-locks-container">
                 {% if locked_keys %}
-                {% for key in locked_keys %}
-                    <input type="hidden" name="lock_{{ key }}" value="true">
-                {% endfor %}
+                    {% for key in locked_keys %}
+                        <input type="hidden" name="lock_{{ key }}" value="true">
+                    {% endfor %}
                 {% endif %}
             </div>
 
-            <button type="submit">Find Best Parameters</button>
+            <button type="submit" class="btn-find">🔍 Find Best Parameters</button>
         </form>
+
     </div>
-    <div class="output-panel">
-        <h2>Optimal Settings Result</h2>
+
+    <!-- Right Panel: Result -->
+    <div class="panel panel-right">
+        <h2>📊 Predicted Optimal Settings</h2>
         <div class="result-display">
             {% if formatted_results %}
             <div class="optimal-params">
-                <p>Settings for a target of <strong>{{ target_quality }}</strong></p>
+                <p>Optimal Settings for Target Quality: <strong>{{ target_quality }}</strong></p>
                 <ul>
                 {% for item in formatted_results %}
-                    <li {% if item.is_locked %}style="font-weight: bold; color: #0052cc;"{% endif %}>
+                    <li {% if item.is_locked %}class="locked-param"{% endif %}>
                         <strong>{{ item.label }}:</strong> {{ item.value }}
                     </li>
                 {% endfor %}
                 </ul>
-                <h3>Achieved Quality: <span>{{ achieved_quality|floatformat:2 }}</span></h3>
+                <h3>Achieved Quality: <span class="quality-score">{{ achieved_quality|floatformat:2 }}</span></h3>
             </div>
+            {% else %}
+                <p>Submit the form to calculate optimal parameters.</p>
             {% endif %}
         </div>
+
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    function toggleLock(paramName) {
-        const inputField = document.getElementById(`input-${paramName}`);
-        const lockButton = event.target;
-        const hiddenContainer = document.getElementById('hidden-locks-container');
-        const hiddenInput = document.querySelector(`input[name="lock_${paramName}"]`);
+function toggleLock(paramName) {
+    const inputField = document.getElementById(`input-${paramName}`);
+    const lockButton = event.target;
+    const hiddenContainer = document.getElementById('hidden-locks-container');
+    const hiddenInput = document.querySelector(`input[name="lock_${paramName}"]`);
 
-        if (inputField.disabled) {
-            // --- UNLOCK ---
-            inputField.disabled = false;
-            lockButton.classList.remove('locked');
-            lockButton.textContent = 'Lock';
-            if (hiddenInput) {
-                hiddenInput.remove();
-            }
-        } else {
-            // --- LOCK ---
-            inputField.disabled = true;
-            lockButton.classList.add('locked');
-            lockButton.textContent = 'Unlock';
-            if (!hiddenInput) {
-                const newHiddenInput = document.createElement('input');
-                newHiddenInput.type = 'hidden';
-                newHiddenInput.name = `lock_${paramName}`;
-                newHiddenInput.value = 'true';
-                hiddenContainer.appendChild(newHiddenInput);
-            }
+    if (inputField.disabled) {
+        inputField.disabled = false;
+        lockButton.classList.remove('locked');
+        lockButton.textContent = 'Lock';
+        if (hiddenInput) hiddenInput.remove();
+    } else {
+        inputField.disabled = true;
+        lockButton.classList.add('locked');
+        lockButton.textContent = 'Unlock';
+        if (!hiddenInput) {
+            const newHiddenInput = document.createElement('input');
+            newHiddenInput.type = 'hidden';
+            newHiddenInput.name = `lock_${paramName}`;
+            newHiddenInput.value = 'true';
+            hiddenContainer.appendChild(newHiddenInput);
         }
     }
+}
 
-    // --- CRITICAL FIX ---
-    // This script ensures that the values of locked (disabled) inputs are
-    // sent to the server when the form is submitted.
-    const findParamsForm = document.getElementById('find-params-form');
-    findParamsForm.addEventListener('submit', function() {
-        // Find all disabled inputs within this specific form
-        const disabledInputs = findParamsForm.querySelectorAll('input:disabled');
-        // Re-enable them just for a moment so their values are included in the submission
-        disabledInputs.forEach(input => {
-            input.disabled = false;
-        });
-    });
+// Include disabled inputs in submission
+const findParamsForm = document.getElementById('find-params-form');
+findParamsForm.addEventListener('submit', function() {
+    const disabledInputs = findParamsForm.querySelectorAll('input:disabled');
+    disabledInputs.forEach(input => input.disabled = false);
+});
 </script>
 {% endblock %}

@@ -4,11 +4,12 @@
 html, body {
     height: 100%;
     margin: 0;
-    overflow: hidden; /* This is the key change: Hides the main page scrollbar */
-    font-family: 'Roboto', sans-serif;
+    overflow: hidden; /* Hides the main scrollbar */
+    font-family: 'Comic Sans MS', cursive, sans-serif;
     background-color: #f0f2f5;
     color: #333;
 }
+
 
 .dashboard {
     display: flex;
@@ -27,7 +28,7 @@ html, body {
 }
 
 .main-title {
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
     color: #0d47a1;
     font-size: 2.8rem;
     margin: 0;
