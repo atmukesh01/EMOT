@@ -6,12 +6,12 @@
         <h2>Predict Quality from Parameters</h2>
         <form id="predict-form" method="post" action="{% url 'predict_quality' %}">
             {% csrf_token %}
-            <div class="form-group"><label>Temperature (°C)</label><input type="number" name="temperature" step="0.1" required></div>
-            <div class="form-group"><label>Pressure (psi)</label><input type="number" name="pressure" step="0.1" required></div>
-            <div class="form-group"><label>Speed (rpm)</label><input type="number" name="speed" required></div>
-            <div class="form-group"><label>Viscosity (Pa·s)</label><input type="number" name="viscosity" step="0.1" required></div>
-            <div class="form-group"><label>Hours Since Maintenance</label><input type="number" name="maintenance" required></div>
-            <div class="form-group"><label>Cycle Time (s)</label><input type="number" name="cycle_time" step="0.1" required></div>
+            {% for param in params_config %}
+            <div class="form-group">
+                <label>{{ param.label }}</label>
+                <input type="number" name="{{ param.name }}" step="0.1" required>
+            </div>
+            {% endfor %}
             <button type="submit">Predict Quality</button>
         </form>
     </div>
@@ -37,7 +37,7 @@
         fetch(predictForm.action, {
             method: 'POST',
             body: formData,
-            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken'), 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(response => {
             if (!response.ok) {

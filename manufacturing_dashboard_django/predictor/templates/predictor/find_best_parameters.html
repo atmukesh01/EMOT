@@ -1,20 +1,208 @@
 {% extends 'predictor/base.html' %}
 
+{% block extra_css %}
+<style>
+    /* General Layout & Font */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f4f7f9;
+        color: #333;
+        padding: 20px;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 30px;
+        /* --- CHANGED THIS LINE --- */
+        max-width: 1700px; /* Increased from 1200px to make the container wider */
+        margin: auto;
+    }
+
+    /* Panel Styling */
+    .panel, .output-panel {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+    }
+
+    h2 {
+        margin-top: 0;
+        color: #0056b3;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    /* Form Styling */
+    .form-group, .form-group-lockable {
+        margin-bottom: 18px;
+    }
+
+    .form-group-lockable {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .input-wrapper {
+        flex-grow: 1;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #555;
+    }
+
+    input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box; /* Important for padding and width */
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    input[type="number"]:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+    
+    input[type="number"]:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+
+    /* Lock Button Enhancement */
+    .lock-btn {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.1s;
+        min-width: 80px; /* Ensures buttons have same width */
+    }
+
+    /* Default state (Unlocked) -> Red Button */
+    .lock-btn {
+        background-color: #dc3545; /* Red */
+    }
+
+    .lock-btn:hover {
+        background-color: #c82333; /* Darker Red */
+        transform: translateY(-1px);
+    }
+    
+    /* Locked state -> Green Button */
+    .lock-btn.locked {
+        background-color: #28a745; /* Green */
+    }
+    
+    .lock-btn.locked:hover {
+        background-color: #218838; /* Darker Green */
+    }
+
+    /* Main Submit Button */
+    button[type="submit"] {
+        width: 100%;
+        padding: 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-top: 10px;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+
+    /* Output Panel Styling */
+    .result-display {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        min-height: 100px;
+    }
+    
+    .result-display p:first-child {
+        margin-top: 0;
+    }
+    
+    .optimal-params ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .optimal-params li {
+        padding: 8px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .optimal-params li:last-child {
+        border-bottom: none;
+    }
+    
+    .optimal-params h3 {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #e2eefd;
+        color: #0056b3;
+        border-radius: 4px;
+        text-align: center;
+    }
+    
+    .error {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    /* Loading Spinner */
+    .loader {
+        border: 4px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
+        margin: 20px auto;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+</style>
+{% endblock %}
+
+
 {% block content %}
-<div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+<div class="container">
     <div class="panel">
         <h2>Find Parameters for a Quality Score</h2>
         <form id="find-params-form" method="post" action="{% url 'find_params' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label>Desired Quality Score</label>
-                <input type="number" name="target_quality" value="{{ target_quality|default:'' }}" step="0.1" required>
+                <label for="target_quality">Desired Quality Score</label>
+                <input type="number" name="target_quality" id="target_quality" value="{{ target_quality|default:'' }}" step="0.1" required>
             </div>
 
             {% for param in params_config %}
             <div class="form-group-lockable">
                 <div class="input-wrapper">
-                    <label>{{ param.label }}</label>
+                    <label for="input-{{ param.name }}">{{ param.label }}</label>
                     <input type="number" name="{{ param.name }}" id="input-{{ param.name }}"
                            value="{{ param.value }}"
                            step="0.1" {% if param.is_locked %}disabled{% endif %}>
@@ -39,19 +227,7 @@
     <div class="output-panel">
         <h2>Optimal Settings Result</h2>
         <div class="result-display">
-            {% if formatted_results %}
-            <div class="optimal-params">
-                <p>Settings for a target of <strong>{{ target_quality }}</strong></p>
-                <ul>
-                {% for item in formatted_results %}
-                    <li {% if item.is_locked %}style="font-weight: bold; color: #0052cc;"{% endif %}>
-                        <strong>{{ item.label }}:</strong> {{ item.value }}
-                    </li>
-                {% endfor %}
-                </ul>
-                <h3>Achieved Quality: <span>{{ achieved_quality|floatformat:2 }}</span></h3>
-            </div>
-            {% endif %}
+            <p>Enter a target quality score and lock any desired parameters. Then, click "Find Best Parameters" to see the results.</p>
         </div>
     </div>
 </div>
@@ -66,15 +242,13 @@
         const hiddenInput = document.querySelector(`input[name="lock_${paramName}"]`);
 
         if (inputField.disabled) {
-            // --- UNLOCK ---
+            // UNLOCKING THE FIELD
             inputField.disabled = false;
             lockButton.classList.remove('locked');
             lockButton.textContent = 'Lock';
-            if (hiddenInput) {
-                hiddenInput.remove();
-            }
+            if (hiddenInput) { hiddenInput.remove(); }
         } else {
-            // --- LOCK ---
+            // LOCKING THE FIELD
             inputField.disabled = true;
             lockButton.classList.add('locked');
             lockButton.textContent = 'Unlock';
@@ -88,16 +262,63 @@
         }
     }
 
-    // --- CRITICAL FIX ---
-    // This script ensures that the values of locked (disabled) inputs are
-    // sent to the server when the form is submitted.
     const findParamsForm = document.getElementById('find-params-form');
-    findParamsForm.addEventListener('submit', function() {
-        // Find all disabled inputs within this specific form
+    const resultDisplay = document.querySelector('.result-display');
+
+    findParamsForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        // Show loading spinner
+        resultDisplay.innerHTML = '<div class="loader"></div><p style="text-align: center;">Searching for optimal parameters...</p>';
+
+        // Temporarily enable disabled inputs to include them in FormData
         const disabledInputs = findParamsForm.querySelectorAll('input:disabled');
-        // Re-enable them just for a moment so their values are included in the submission
         disabledInputs.forEach(input => {
             input.disabled = false;
+        });
+
+        const formData = new FormData(findParamsForm);
+
+        // Re-disable the inputs for the user
+        disabledInputs.forEach(input => {
+            input.disabled = true;
+        });
+
+        fetch(findParamsForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'X-Requested-With': 'XMLHttpRequest' 
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                 return response.json().then(err => { throw new Error(err.error || 'A server error occurred.') });
+            }
+            return response.json(); 
+        })
+        .then(data => {
+            if (data.success) {
+                let html = '<div class="optimal-params">';
+                html += `<p>Found settings for a target of <strong>${data.target_quality}</strong>:</p><ul>`;
+                
+                data.formatted_results.forEach(item => {
+                    const lockedStyle = item.is_locked ? 'font-weight: bold; color: #0c5460; background-color: #d1ecf1;' : '';
+                    html += `<li style="${lockedStyle}"><strong>${item.label}:</strong> ${item.value}</li>`;
+                });
+
+                html += `</ul><h3>Achieved Quality: <span>${data.achieved_quality.toFixed(2)}</span></h3></div>`;
+                
+                resultDisplay.innerHTML = html;
+            } else {
+                // Use the error message from the server if available
+                throw new Error(data.error || "Could not find a valid combination of parameters.");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDisplay.innerHTML = `<p class="error">${error.message}</p>`;
         });
     });
 </script>

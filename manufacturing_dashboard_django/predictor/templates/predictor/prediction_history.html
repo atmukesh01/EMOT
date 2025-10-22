@@ -1,0 +1,119 @@
+{% extends 'predictor/base.html' %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <h2>Quality Prediction History</h2>
+        <a href="{% url 'download_quality_report' %}" class="download-btn">Download Excel 📥</a>
+    </div>
+    <div class="process-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Predicted Quality</th>
+                    <th>Temp (°C)</th>
+                    <th>Pressure (psi)</th>
+                    <th>Action</th> </tr>
+            </thead>
+            <tbody>
+                {% for log in quality_logs %}
+                <tr>
+                    <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                    <td><strong>{{ log.predicted_quality|floatformat:2 }}</strong></td>
+                    <td>{{ log.temperature_c }}</td>
+                    <td>{{ log.pressure_psi }}</td>
+                    <td>
+                        <form method="post" action="{% url 'remove_quality_log' log.id %}" style="margin: 0;">
+                            {% csrf_token %}
+                            <button type="submit" class="remove-btn">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5">No quality predictions have been logged yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="output-panel">
+    <div class="panel-header">
+        <h2>Image Prediction History</h2>
+        <a href="{% url 'download_image_report' %}" class="download-btn">Download Excel 📥</a>
+    </div>
+    <div class="process-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Timestamp</th>
+                    <th>Identified Plastic</th>
+                    <th>Confidence</th>
+                    <th>Action</th> </tr>
+            </thead>
+            <tbody>
+                {% for log in image_logs %}
+                <tr>
+                    <td><img src="{{ log.image.url }}" alt="Plastic" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;"></td>
+                    <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                    <td><strong>{{ log.identified_plastic }}</strong></td>
+                    <td>{{ log.confidence_score|floatformat:2 }}%</td>
+                    <td>
+                        <form method="post" action="{% url 'remove_image_log' log.id %}" style="margin: 0;">
+                            {% csrf_token %}
+                            <button type="submit" class="remove-btn">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5">No image predictions have been logged yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .panel-header h2 {
+        margin-bottom: 0;
+    }
+    .download-btn {
+        background-color: #1a73e8;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background-color 0.2s ease;
+    }
+    .download-btn:hover {
+        background-color: #1765c6;
+    }
+    /* --- New Styles for the Remove Button --- */
+    .remove-btn {
+        background-color: #d93025; /* Red color */
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .remove-btn:hover {
+        background-color: #c5221f;
+    }
+</style>
+{% endblock %}

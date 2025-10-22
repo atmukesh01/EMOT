@@ -1,5 +1,3 @@
-# File: predictor/ml_model.py
-
 import joblib
 import pandas as pd
 import numpy as np
@@ -7,14 +5,12 @@ import os
 from PIL import Image
 import tensorflow as tf
 
-# --- Path Setup ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 QUALITY_MODEL_PATH = os.path.join(BASE_DIR, 'final_model_enhanced.pkl')
-GATEKEEPER_MODEL_PATH = os.path.join(BASE_DIR, 'plastic_gatekeeper_model.keras') # New Gatekeeper
-IDENTIFIER_MODEL_PATH = os.path.join(BASE_DIR, 'plastic_image_classifier.keras') # Original Identifier
+GATEKEEPER_MODEL_PATH = os.path.join(BASE_DIR, 'plastic_gatekeeper_model.keras') 
+IDENTIFIER_MODEL_PATH = os.path.join(BASE_DIR, 'plastic_image_classifier.keras') 
 CLASS_NAMES_PATH = os.path.join(BASE_DIR, 'plastic_class_names.txt')
 
-# --- Load All Models ---
 try:
     quality_model = joblib.load(QUALITY_MODEL_PATH)
     print("✅ Quality prediction model loaded.")
@@ -31,36 +27,28 @@ try:
     identifier_model = tf.keras.models.load_model(IDENTIFIER_MODEL_PATH)
     with open(CLASS_NAMES_PATH, 'r') as f:
         identifier_class_names = f.read().strip().split(',')
-    print("✅ Plastic identifier model loaded.")
+    print(" Plastic identifier model loaded.")
 except Exception as e:
-    identifier_model = None; identifier_class_names = []; print(f"❌ Error loading identifier model: {e}")
+    identifier_model = None; identifier_class_names = []; print(f" Error loading identifier model: {e}")
 
 
-# --- The New Two-Stage Prediction Pipeline ---
 def run_full_image_pipeline(image_file):
-    """
-    Runs the complete two-stage AI pipeline.
-    1. Gatekeeper: Checks if the image is plastic.
-    2. Identifier: If it is plastic, identifies the specific type.
-    """
+    
     if not gatekeeper_model or not identifier_model:
         return "Model(s) not loaded", 0.0, None
 
     try:
-        # --- Stage 1: Gatekeeper Prediction ---
         img = Image.open(image_file).convert('RGB').resize((224, 224))
         img_array = tf.keras.preprocessing.image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
 
         gatekeeper_pred = gatekeeper_model.predict(img_array)[0][0]
         
-        # The gatekeeper's class order is alphabetical: ['not_plastic', 'plastic']
-        # so a high prediction value (close to 1.0) means it's likely plastic.
-        if gatekeeper_pred < 0.7: # 70% confidence threshold for the gatekeeper
+      
+        if gatekeeper_pred < 0.7: 
             return "Not a plastic item", gatekeeper_pred, "not_plastic"
 
-        # --- Stage 2: Identifier Prediction ---
-        # If the gatekeeper passed, we now run the expert identifier model
+      
         identifier_preds = identifier_model.predict(img_array)[0]
         confidence = np.max(identifier_preds)
         predicted_class_index = np.argmax(identifier_preds)
@@ -73,8 +61,6 @@ def run_full_image_pipeline(image_file):
         return "Error", 0.0, None
 
 
-# --- Quality Prediction Functions (Unchanged) ---
-# ... (The get_quality_prediction and find_best_parameters functions remain here, unchanged)
 def get_quality_prediction(params):
     if quality_model is None: return None
     try:

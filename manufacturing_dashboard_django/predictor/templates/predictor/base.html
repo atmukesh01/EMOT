@@ -1,27 +1,39 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Process Optimization Tool</title>
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}">
+    <title>Manufacturing AI Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'predictor/style.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="dashboard">
-        <div class="title-container">
-            <h1 class="main-title">Process and Product Optimization Tool</h1>
-            <p class="subtitle">Plastic Reuse System</p>
-        </div>
+        <header class="title-container">
+            <h1 class="main-title">AI-Powered Manufacturing Dashboard</h1>
+            <p class="subtitle">Process & Product Optimization</p>
+        </header>
+
         <nav>
-            <a href="{% url 'predict_quality' %}" class="nav-button {% if request.resolver_match.url_name == 'predict_quality' %}active{% endif %}">Predict Quality</a>
-            <a href="{% url 'find_params' %}" class="nav-button {% if request.resolver_match.url_name == 'find_params' %}active{% endif %}">Find Best Parameters</a>
-            <a href="{% url 'visualize' %}" class="nav-button {% if request.resolver_match.url_name == 'visualize' %}active{% endif %}">Visualize</a>
+            <a href="{% url 'predict_quality' %}" class="nav-button {% if request.resolver_match.url_name == 'predict_quality' %}active{% endif %}">
+                Predict Quality
+            </a>
+            <a href="{% url 'find_params' %}" class="nav-button {% if request.resolver_match.url_name == 'find_params' %}active{% endif %}">
+                Find Best Parameters
+            </a>
+            <a href="{% url 'visualize' %}" class="nav-button {% if request.resolver_match.url_name == 'visualize' %}active{% endif %}">
+                Visualize Plastic
+            </a>
+            
+    <a href="{% url 'prediction_history' %}" class="nav-button {% if request.resolver_match.url_name == 'prediction_history' %}active{% endif %}">
+        Prediction History
+    </a>
         </nav>
-        <main class="{% if 'predict' in request.resolver_match.url_name or 'find_params' in request.resolver_match.url_name %}interactive-layout{% else %}full-screen-layout{% endif %}">
+
+        <main class="content-area {% if request.resolver_match.url_name == 'visualize' %}full-screen-layout{% else %}interactive-layout{% endif %}">
             {% block content %}{% endblock %}
         </main>
     </div>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

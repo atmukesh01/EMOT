@@ -1,8 +1,12 @@
-from django.shortcuts import render
-from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpResponse
 from .ml_model import get_quality_prediction, find_best_parameters, run_full_image_pipeline
+from .models import QualityPredictionLog, ImagePredictionLog
 import base64
+import pandas as pd
+import io
 
+# --- FINAL DATABASE WITH PRODUCT-SPECIFIC PROCESSES FOR ALL PLASTICS ---
 PLASTIC_DATABASE = {
     "PET": {
         "name": "Polyethylene Terephthalate (PET)", "viscosity": "18-22 Pa·s",
@@ -149,6 +153,7 @@ def predict_quality_view(request):
             }
             prediction = get_quality_prediction(params)
             if prediction is not None:
+                QualityPredictionLog.objects.create(**params, predicted_quality=prediction)
                 return JsonResponse({'predicted_quality': prediction})
             else:
                 return JsonResponse({'error': 'Model is not loaded on the server.'}, status=500)
@@ -214,6 +219,11 @@ def visualize_view(request):
         encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
         context['uploaded_image'] = encoded_image
         if gatekeeper_result == "plastic":
+            ImagePredictionLog.objects.create(
+                image=image_file,
+                identified_plastic=identified_type,
+                confidence_score=confidence_score
+            )
             context['result'] = PLASTIC_DATABASE.get(identified_type, {
                 "name": f"Unknown Plastic ({identified_type})", "viscosity": "N/A", "product_processes": {}
             })
@@ -221,3 +231,65 @@ def visualize_view(request):
         else:
             context['error'] = "This does not appear to be a plastic item. Please upload a different image."
     return render(request, 'predictor/visualize.html', context)
+
+def prediction_history_view(request):
+    quality_logs = QualityPredictionLog.objects.all().order_by('-timestamp')
+    image_logs = ImagePredictionLog.objects.all().order_by('-timestamp')
+    context = {
+        'quality_logs': quality_logs,
+        'image_logs': image_logs,
+    }
+    return render(request, 'predictor/prediction_history.html', context)
+
+# --- DOWNLOAD REPORT VIEWS (CHANGED TO CSV) ---
+
+def download_quality_report(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="quality_prediction_report.csv"'
+
+    logs = QualityPredictionLog.objects.all().order_by('-timestamp')
+    data = list(logs.values(
+        'timestamp', 'predicted_quality', 'temperature_c', 'pressure_psi',
+        'speed_rpm', 'viscosity_pas', 'hours_since_maintenance', 'cycle_time_s'
+    ))
+    df = pd.DataFrame(data)
+    df.to_csv(path_or_buf=response, index=False)
+    return response
+
+def download_image_report(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="image_prediction_report.csv"'
+
+    logs = ImagePredictionLog.objects.all().order_by('-timestamp')
+    data = []
+    for log in logs:
+        data.append({
+            'Timestamp': log.timestamp,
+            'Identified Plastic': log.identified_plastic,
+            'Confidence Score (%)': log.confidence_score,
+            'Image URL': request.build_absolute_uri(log.image.url)
+        })
+    df = pd.DataFrame(data)
+    df.to_csv(path_or_buf=response, index=False)
+    return response
+
+# --- REMOVE LOG VIEWS ---
+
+def remove_quality_log(request, log_id):
+    if request.method == 'POST':
+        try:
+            log_to_delete = QualityPredictionLog.objects.get(id=log_id)
+            log_to_delete.delete()
+        except QualityPredictionLog.DoesNotExist:
+            pass
+    return redirect('prediction_history')
+
+def remove_image_log(request, log_id):
+    if request.method == 'POST':
+        try:
+            log_to_delete = ImagePredictionLog.objects.get(id=log_id)
+            log_to_delete.image.delete(save=False)
+            log_to_delete.delete()
+        except ImagePredictionLog.DoesNotExist:
+            pass
+    return redirect('prediction_history')
