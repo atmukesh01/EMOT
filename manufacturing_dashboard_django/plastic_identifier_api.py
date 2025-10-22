@@ -61,10 +61,8 @@ if __name__ == "__main__":
     accuracy = accuracy_score(y_test, predictions)
     print(f"Model Accuracy: {accuracy:.2%}")
     
-    # --- THIS IS THE CRUCIAL PART THAT PRINTS THE REPORT ---
     print("\nClassification Report:")
     print(classification_report(y_test, predictions))
-    # ---------------------------------------------------------
     
     output_path = os.path.join('predictor', 'plastic_identifier_model.pkl')
     joblib.dump(model, output_path)
